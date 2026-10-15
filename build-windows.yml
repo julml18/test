@@ -1,0 +1,31 @@
+name: Build Windows installer
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack source
+        shell: pwsh
+        run: |
+          if (Test-Path redify-src.zip) {
+            Expand-Archive -Path redify-src.zip -DestinationPath . -Force
+            Remove-Item redify-src.zip
+          }
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build MSI
+        run: .\gradlew.bat :app:packageMsi --no-daemon
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: Redify-Windows
+          path: app/build/compose/binaries/main/msi/*.msi
